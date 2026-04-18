@@ -55,6 +55,51 @@ def make_full_topic(topic_id: int, slug: str, created_at: str) -> dict:
     }
 
 
+def make_config_with_categories(output_dir: Path, categories: list[int]) -> Config:
+    return Config(
+        forum_url="https://forum.example.com",
+        api_key="testkey",
+        output_dir=output_dir,
+        earliest_date=date(2024, 1, 1),
+        api_username="system",
+        categories=categories,
+        max_retries=3,
+    )
+
+
+class TestArchiverCategoryFilter:
+    def test_uses_category_endpoint_when_categories_configured(self, tmp_path):
+        cfg = make_config_with_categories(tmp_path, categories=[4, 7])
+        topic = make_topic(1, "cat-topic", "2024-03-15T10:00:00.000Z")
+
+        with patch("discourse_retrieval.archiver.DiscourseClient") as MockClient:
+            mock_client = MockClient.return_value
+            mock_client.list_category_topics.side_effect = [[topic], [], [], []]
+            mock_client.get_topic.return_value = make_full_topic(
+                1, "cat-topic", "2024-03-15T10:00:00.000Z"
+            )
+
+            Archiver(cfg).run()
+
+        mock_client.list_topics.assert_not_called()
+        assert mock_client.list_category_topics.call_count >= 2
+        calls = [c.args[0] for c in mock_client.list_category_topics.call_args_list]
+        assert 4 in calls
+        assert 7 in calls
+
+    def test_uses_latest_endpoint_when_no_categories_configured(self, tmp_path):
+        cfg = make_config(tmp_path)
+
+        with patch("discourse_retrieval.archiver.DiscourseClient") as MockClient:
+            mock_client = MockClient.return_value
+            mock_client.list_topics.return_value = []
+
+            Archiver(cfg).run()
+
+        mock_client.list_category_topics.assert_not_called()
+        mock_client.list_topics.assert_called()
+
+
 class TestArchiverDownload:
     def test_downloads_topics_within_date_range(self, tmp_path, capsys):
         cfg = make_config(tmp_path)
