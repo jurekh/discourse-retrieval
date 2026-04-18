@@ -25,11 +25,11 @@ and testing.
 
 **Purpose**: Project initialization. No user story work begins until this phase is complete.
 
-- [ ] T001 Create `pyproject.toml` with project metadata (`name = "discourse-retrieval"`, `requires-python = ">=3.11"`), runtime deps (`requests`, `html2text`), dev deps (`pytest`, `pytest-cov`, `ruff`), `[project.scripts]` entry point (`discourse-retrieval = "discourse_retrieval.cli:main"`), `[tool.ruff]` config (strict rules), and `[tool.pytest.ini_options]` with `addopts = "--cov=discourse_retrieval --cov-report=term-missing --cov-fail-under=80"`
-- [ ] T002 [P] Create `Makefile` with targets: `build` (`uv sync`), `lint` (`uv run ruff check . && uv run ruff format --check .`), `test` (`uv run pytest`), `clean` (`rm -rf .venv dist *.egg-info .coverage .pytest_cache`)
-- [ ] T003 [P] Create `src/discourse_retrieval/__init__.py` (empty, marks package)
-- [ ] T004 [P] Create `tests/__init__.py`, `tests/unit/__init__.py`, `tests/integration/__init__.py`
-- [ ] T005 Run `make build` to create `.venv` and generate `uv.lock`; commit `uv.lock`
+- [x] T001 Create `pyproject.toml` with project metadata (`name = "discourse-retrieval"`, `requires-python = ">=3.11"`), runtime deps (`requests`, `html2text`), dev deps (`pytest`, `pytest-cov`, `ruff`), `[project.scripts]` entry point (`discourse-retrieval = "discourse_retrieval.cli:main"`), `[tool.ruff]` config (strict rules), and `[tool.pytest.ini_options]` with `addopts = "--cov=discourse_retrieval --cov-report=term-missing --cov-fail-under=80"`
+- [x] T002 [P] Create `Makefile` with targets: `build` (`uv sync`), `lint` (`uv run ruff check . && uv run ruff format --check .`), `test` (`uv run pytest`), `clean` (`rm -rf .venv dist *.egg-info .coverage .pytest_cache`)
+- [x] T003 [P] Create `src/discourse_retrieval/__init__.py` (empty, marks package)
+- [x] T004 [P] Create `tests/__init__.py`, `tests/unit/__init__.py`, `tests/integration/__init__.py`
+- [x] T005 Run `make build` to create `.venv` and generate `uv.lock`; commit `uv.lock`
 
 **Checkpoint**: `make build` succeeds, `make lint` and `make test` run (zero tests pass is OK at this stage)
 
@@ -43,27 +43,27 @@ and testing.
 
 ### Tests for Config (write first, confirm failing)
 
-- [ ] T006 [P] Write failing tests for `Config` in `tests/unit/test_config.py`: test TOML loading of all fields, `DISCOURSE_API_KEY` env override, `DISCOURSE_API_USERNAME` env override, validation errors for missing `forum_url`/`api_key`/`output_dir`/`earliest_date`, invalid `forum_url` (no scheme), invalid `earliest_date` format, invalid `max_retries` (zero/negative), and `categories` as empty list default
+- [x] T006 [P] Write failing tests for `Config` in `tests/unit/test_config.py`: test TOML loading of all fields, `DISCOURSE_API_KEY` env override, `DISCOURSE_API_USERNAME` env override, validation errors for missing `forum_url`/`api_key`/`output_dir`/`earliest_date`, invalid `forum_url` (no scheme), invalid `earliest_date` format, invalid `max_retries` (zero/negative), and `categories` as empty list default
 
 ### Implementation: Config
 
-- [ ] T007 Implement `Config` dataclass in `src/discourse_retrieval/config.py`: load `config.toml` via `tomllib`, apply env overrides (`DISCOURSE_API_KEY`, `DISCOURSE_API_USERNAME`), validate all fields, raise `ValueError` with the message format from `contracts/config-schema.md`, expose `from_file(path: Path) -> Config` classmethod
+- [x] T007 Implement `Config` dataclass in `src/discourse_retrieval/config.py`: load `config.toml` via `tomllib`, apply env overrides (`DISCOURSE_API_KEY`, `DISCOURSE_API_USERNAME`), validate all fields, raise `ValueError` with the message format from `contracts/config-schema.md`, expose `from_file(path: Path) -> Config` classmethod
 
 ### Tests for DownloadState (write first, confirm failing)
 
-- [ ] T008 [P] Write failing tests for `DownloadState` in `tests/unit/test_state.py`: test `save()` writes correct JSON to `<slug>.state.json` alongside the `.md` file, `load()` reads it back, `load()` returns `None` when file absent, `needs_update(current_posts_count)` returns `False` when counts match and `True` when current count is higher
+- [x] T008 [P] Write failing tests for `DownloadState` in `tests/unit/test_state.py`: test `save()` writes correct JSON to `<slug>.state.json` alongside the `.md` file, `load()` reads it back, `load()` returns `None` when file absent, `needs_update(current_posts_count)` returns `False` when counts match and `True` when current count is higher
 
 ### Implementation: DownloadState
 
-- [ ] T009 Implement `DownloadState` dataclass in `src/discourse_retrieval/state.py`: fields `thread_id`, `slug`, `posts_count`, `downloaded_at`; `save(md_path: Path)` writes sidecar JSON; `load(md_path: Path) -> DownloadState | None` reads it; `needs_update(current: int) -> bool` compares post counts
+- [x] T009 Implement `DownloadState` dataclass in `src/discourse_retrieval/state.py`: fields `thread_id`, `slug`, `posts_count`, `downloaded_at`; `save(md_path: Path)` writes sidecar JSON; `load(md_path: Path) -> DownloadState | None` reads it; `needs_update(current: int) -> bool` compares post counts
 
 ### Tests for DiscourseClient (write first, confirm failing)
 
-- [ ] T010 [P] Write failing tests for `DiscourseClient` in `tests/unit/test_client.py`: use `unittest.mock.patch` to mock `requests.Session.get`; test auth headers (`Api-Key`, `Api-Username`) present on every request; test `list_topics(page)` parses topic list response and returns list of topic dicts; test `get_topic(id)` returns full topic dict; test `get_topic_posts_count(id)` returns integer; test retry on HTTP 429 with `Retry-After` header; test retry exhaustion raises exception after `max_retries` attempts; test exponential backoff delays (mock `time.sleep`)
+- [x] T010 [P] Write failing tests for `DiscourseClient` in `tests/unit/test_client.py`: use `unittest.mock.patch` to mock `requests.Session.get`; test auth headers (`Api-Key`, `Api-Username`) present on every request; test `list_topics(page)` parses topic list response and returns list of topic dicts; test `get_topic(id)` returns full topic dict; test `get_topic_posts_count(id)` returns integer; test retry on HTTP 429 with `Retry-After` header; test retry exhaustion raises exception after `max_retries` attempts; test exponential backoff delays (mock `time.sleep`)
 
 ### Implementation: DiscourseClient
 
-- [ ] T011 Implement `DiscourseClient` in `src/discourse_retrieval/client.py`: `__init__(config: Config)` sets up `requests.Session` with `Api-Key` and `Api-Username` headers and `timeout=30`; `list_topics(page: int) -> list[dict]` calls `GET /latest.json?order=created&ascending=false&page={page}`; `list_category_topics(category_id: int, page: int) -> list[dict]` calls `GET /c/{category_id}/l/latest.json?page={page}`; `get_topic(topic_id: int) -> dict` calls `GET /t/{topic_id}.json?include_raw=1`; `get_topic_posts_count(topic_id: int) -> int` calls `GET /t/{topic_id}.json` and returns `posts_count` field; internal `_request_with_retry(method, url, **kwargs)` implements exponential backoff respecting `Retry-After` header, raises `RuntimeError` after `max_retries` exhausted
+- [x] T011 Implement `DiscourseClient` in `src/discourse_retrieval/client.py`: `__init__(config: Config)` sets up `requests.Session` with `Api-Key` and `Api-Username` headers and `timeout=30`; `list_topics(page: int) -> list[dict]` calls `GET /latest.json?order=created&ascending=false&page={page}`; `list_category_topics(category_id: int, page: int) -> list[dict]` calls `GET /c/{category_id}/l/latest.json?page={page}`; `get_topic(topic_id: int) -> dict` calls `GET /t/{topic_id}.json?include_raw=1`; `get_topic_posts_count(topic_id: int) -> int` calls `GET /t/{topic_id}.json` and returns `posts_count` field; internal `_request_with_retry(method, url, **kwargs)` implements exponential backoff respecting `Retry-After` header, raises `RuntimeError` after `max_retries` exhausted
 
 **Checkpoint**: Foundation ready - `make test` passes all unit tests for config, state, and client
 
@@ -79,23 +79,23 @@ mocked forum; verify markdown files appear under correct YYYY/MM paths with all 
 
 ### Tests for ThreadRenderer (write first, confirm failing)
 
-- [ ] T012 [P] [US1] Write failing tests for `ThreadRenderer` in `tests/unit/test_renderer.py`: test `render(topic_dict) -> str` produces a string starting with `# <title>`; test metadata block contains `**Category**`, `**Created**`, `**URL**`; test each post renders as `## Post N - <author> (<datetime>)` followed by content; test raw content is used when `raw` field present; test `html2text` conversion applied when only `cooked` HTML field present; test post separator `---` between posts
+- [x] T012 [P] [US1] Write failing tests for `ThreadRenderer` in `tests/unit/test_renderer.py`: test `render(topic_dict) -> str` produces a string starting with `# <title>`; test metadata block contains `**Category**`, `**Created**`, `**URL**`; test each post renders as `## Post N - <author> (<datetime>)` followed by content; test raw content is used when `raw` field present; test `html2text` conversion applied when only `cooked` HTML field present; test post separator `---` between posts
 
 ### Implementation: ThreadRenderer
 
-- [ ] T013 [P] [US1] Implement `ThreadRenderer` in `src/discourse_retrieval/renderer.py`: `render(topic: dict) -> str` builds complete markdown string; extract title, category name, created_at, thread URL from topic dict; iterate `post_stream.posts`; use `raw` field if non-empty, else convert `cooked` HTML via `html2text.html2text()`; format each post with author display name and ISO 8601 datetime
+- [x] T013 [P] [US1] Implement `ThreadRenderer` in `src/discourse_retrieval/renderer.py`: `render(topic: dict) -> str` builds complete markdown string; extract title, category name, created_at, thread URL from topic dict; iterate `post_stream.posts`; use `raw` field if non-empty, else convert `cooked` HTML via `html2text.html2text()`; format each post with author display name and ISO 8601 datetime
 
 ### Integration test for US1 (write first, confirm failing)
 
-- [ ] T014 [US1] Write failing integration test in `tests/integration/test_archiver.py`: mock `DiscourseClient` to return two topics (one matching `earliest_date` filter, one older); call `Archiver(config).run()`; assert two markdown files exist at correct `YYYY/MM/<slug>.md` paths; assert two `.state.json` files exist alongside them; assert progress lines printed to stdout; assert final summary line printed
+- [x] T014 [US1] Write failing integration test in `tests/integration/test_archiver.py`: mock `DiscourseClient` to return two topics (one matching `earliest_date` filter, one older); call `Archiver(config).run()`; assert two markdown files exist at correct `YYYY/MM/<slug>.md` paths; assert two `.state.json` files exist alongside them; assert progress lines printed to stdout; assert final summary line printed
 
 ### Implementation: Archiver download loop
 
-- [ ] T015 [US1] Implement `Archiver` class in `src/discourse_retrieval/archiver.py`: `__init__(config: Config)` stores config, creates `DiscourseClient` and `ThreadRenderer`; `_output_path(topic: dict) -> Path` returns `Path(config.output_dir) / YYYY / MM / f"{slug}.md"` derived from topic `created_at`; `_download_thread(topic: dict)` fetches full topic, renders markdown, writes `.md` file (creates parent dirs), writes `.state.json` sidecar, prints `[YYYY/MM] {slug}.md` to stdout; `run()` paginates topic list, filters topics with `created_at >= config.earliest_date`, calls `_download_thread()` for each, prints summary line on completion
+- [x] T015 [US1] Implement `Archiver` class in `src/discourse_retrieval/archiver.py`: `__init__(config: Config)` stores config, creates `DiscourseClient` and `ThreadRenderer`; `_output_path(topic: dict) -> Path` returns `Path(config.output_dir) / YYYY / MM / f"{slug}.md"` derived from topic `created_at`; `_download_thread(topic: dict)` fetches full topic, renders markdown, writes `.md` file (creates parent dirs), writes `.state.json` sidecar, prints `[YYYY/MM] {slug}.md` to stdout; `run()` paginates topic list, filters topics with `created_at >= config.earliest_date`, calls `_download_thread()` for each, prints summary line on completion
 
 ### Implementation: CLI entry point
 
-- [ ] T016 [US1] Implement `main()` in `src/discourse_retrieval/cli.py`: `argparse.ArgumentParser` with `--config` (default `./config.toml`) and `--version` flags; load `Config.from_file(path)`; instantiate and call `Archiver(config).run()`; exit code 1 on `ValueError` (config error), exit code 2 on `RuntimeError` (API error), exit code 3 on `OSError` (filesystem error); print error messages to stderr in format `error: <message>`
+- [x] T016 [US1] Implement `main()` in `src/discourse_retrieval/cli.py`: `argparse.ArgumentParser` with `--config` (default `./config.toml`) and `--version` flags; load `Config.from_file(path)`; instantiate and call `Archiver(config).run()`; exit code 1 on `ValueError` (config error), exit code 2 on `RuntimeError` (API error), exit code 3 on `OSError` (filesystem error); print error messages to stderr in format `error: <message>`
 
 **Checkpoint**: `make test` passes; `uv run discourse-retrieval --config config.toml` downloads
 threads and writes markdown files to `output_dir/YYYY/MM/<slug>.md`
@@ -112,15 +112,15 @@ already-downloaded count and updated count reflects threads with new replies.
 
 ### Tests for resume logic (write first, confirm failing)
 
-- [ ] T017 [P] [US2] Write failing unit tests for resume logic in `tests/unit/test_state.py` (extend existing file): test that `DownloadState.needs_update(42)` returns `False` when `posts_count == 42`; test returns `True` when `posts_count == 40` and current is 42; test that absent state file + absent md file -> `needs_download` helper returns `True`; test absent state file + present md file -> `needs_download` returns `True` (treat as incomplete)
+- [x] T017 [P] [US2] Write failing unit tests for resume logic in `tests/unit/test_state.py` (extend existing file): test that `DownloadState.needs_update(42)` returns `False` when `posts_count == 42`; test returns `True` when `posts_count == 40` and current is 42; test that absent state file + absent md file -> `needs_download` helper returns `True`; test absent state file + present md file -> `needs_download` returns `True` (treat as incomplete)
 
-- [ ] T018 [P] [US2] Write failing unit tests for interrupt handling in `tests/unit/test_archiver.py` (new file): mock `signal.signal` and verify `SIGINT` handler is registered in `Archiver.run()`; test that when the interrupt flag is set mid-loop, the loop exits cleanly and prints the interrupted summary line `"Interrupted. Downloaded: N, Updated: N, Skipped: N (resumable)"`
+- [x] T018 [P] [US2] Write failing unit tests for interrupt handling in `tests/unit/test_archiver.py` (new file): mock `signal.signal` and verify `SIGINT` handler is registered in `Archiver.run()`; test that when the interrupt flag is set mid-loop, the loop exits cleanly and prints the interrupted summary line `"Interrupted. Downloaded: N, Updated: N, Skipped: N (resumable)"`
 
 ### Implementation: resume and interrupt
 
-- [ ] T019 [US2] Add resume logic to `Archiver._should_download(topic: dict) -> tuple[bool, bool]` in `src/discourse_retrieval/archiver.py`: returns `(should_download, is_update)`; if no `.md` or no `.state.json` -> `(True, False)`; if both exist, fetch `posts_count` via `client.get_topic_posts_count()` and compare to state; return `(True, True)` if update needed, `(False, False)` if up to date; wire into `run()` loop: skip if `(False, False)`, increment `skipped` counter; increment `updated` counter on updates
+- [x] T019 [US2] Add resume logic to `Archiver._should_download(topic: dict) -> tuple[bool, bool]` in `src/discourse_retrieval/archiver.py`: returns `(should_download, is_update)`; if no `.md` or no `.state.json` -> `(True, False)`; if both exist, fetch `posts_count` via `client.get_topic_posts_count()` and compare to state; return `(True, True)` if update needed, `(False, False)` if up to date; wire into `run()` loop: skip if `(False, False)`, increment `skipped` counter; increment `updated` counter on updates
 
-- [ ] T020 [US2] Add `SIGINT` handler to `Archiver.run()` in `src/discourse_retrieval/archiver.py`: register `signal.signal(signal.SIGINT, handler)` before loop; handler sets `self._interrupted = True`; loop checks flag after each thread and exits cleanly; on interrupt, print `"Interrupted. Downloaded: N, Updated: N, Skipped: N (resumable)"` to stdout; ensure partially-written `.md` file is removed if write was in progress (use temp file + atomic rename pattern)
+- [x] T020 [US2] Add `SIGINT` handler to `Archiver.run()` in `src/discourse_retrieval/archiver.py`: register `signal.signal(signal.SIGINT, handler)` before loop; handler sets `self._interrupted = True`; loop checks flag after each thread and exits cleanly; on interrupt, print `"Interrupted. Downloaded: N, Updated: N, Skipped: N (resumable)"` to stdout; ensure partially-written `.md` file is removed if write was in progress (use temp file + atomic rename pattern)
 
 **Checkpoint**: Run tool, press Ctrl-C, re-run; second run shows `Downloaded: 0, Updated: 0, Skipped: N`
 for all previously complete threads. `make test` passes.
@@ -136,11 +136,11 @@ threads from that category.
 
 ### Tests for category filtering (write first, confirm failing)
 
-- [ ] T021 [P] [US3] Write failing unit tests for category filtering in `tests/unit/test_client.py` (extend existing file): test `DiscourseClient.list_category_topics(category_id=4, page=0)` calls the correct endpoint `GET /c/4/l/latest.json?page=0`; test that when config has `categories = [4, 7]`, `Archiver` calls `list_category_topics` for each configured category instead of `list_topics`
+- [x] T021 [P] [US3] Write failing unit tests for category filtering in `tests/unit/test_client.py` (extend existing file): test `DiscourseClient.list_category_topics(category_id=4, page=0)` calls the correct endpoint `GET /c/4/l/latest.json?page=0`; test that when config has `categories = [4, 7]`, `Archiver` calls `list_category_topics` for each configured category instead of `list_topics`
 
 ### Implementation: category filtering
 
-- [ ] T022 [US3] Wire `config.categories` into `Archiver.run()` in `src/discourse_retrieval/archiver.py`: if `config.categories` is non-empty, iterate over each category ID and call `client.list_category_topics(cat_id, page)` per category; deduplicate topics by `id` in case a topic appears in multiple configured categories; if `config.categories` is empty, use existing `client.list_topics(page)` path
+- [x] T022 [US3] Wire `config.categories` into `Archiver.run()` in `src/discourse_retrieval/archiver.py`: if `config.categories` is non-empty, iterate over each category ID and call `client.list_category_topics(cat_id, page)` per category; deduplicate topics by `id` in case a topic appears in multiple configured categories; if `config.categories` is empty, use existing `client.list_topics(page)` path
 
 **Checkpoint**: Set `categories = [N]` in config, run tool; only threads from that category
 appear in output. `make test` passes. All three user stories independently testable.
@@ -151,10 +151,10 @@ appear in output. `make test` passes. All three user stories independently testa
 
 **Purpose**: Coverage enforcement, linting, and final validation.
 
-- [ ] T023 Run `make test` and check coverage report; add unit tests in `tests/unit/` for any module below 80% coverage (focus on error paths: missing config fields, OSError on write, empty topic list, pagination stop condition)
-- [ ] T024 [P] Run `make lint`; fix any ruff warnings across all source and test files
-- [ ] T025 [P] Validate `quickstart.md` steps: run `make build`, create a `config.toml` pointing at a test forum or mock server, run `uv run discourse-retrieval`, confirm output matches documented format
-- [ ] T026 Verify atomic write pattern in `Archiver._download_thread()`: confirm that a simulated write failure (mock `OSError` mid-write) leaves no partial `.md` file and no `.state.json` at that path
+- [x] T023 Run `make test` and check coverage report; add unit tests in `tests/unit/` for any module below 80% coverage (focus on error paths: missing config fields, OSError on write, empty topic list, pagination stop condition)
+- [x] T024 [P] Run `make lint`; fix any ruff warnings across all source and test files
+- [x] T025 [P] Validate `quickstart.md` steps: run `make build`, create a `config.toml` pointing at a test forum or mock server, run `uv run discourse-retrieval`, confirm output matches documented format
+- [x] T026 Verify atomic write pattern in `Archiver._download_thread()`: confirm that a simulated write failure (mock `OSError` mid-write) leaves no partial `.md` file and no `.state.json` at that path
 
 ---
 
