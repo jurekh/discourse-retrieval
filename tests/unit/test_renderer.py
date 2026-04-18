@@ -1,4 +1,3 @@
-
 from discourse_retrieval.renderer import ThreadRenderer
 
 
