@@ -113,6 +113,28 @@ class TestArchiverSignalHandling:
         assert "Skipped: 0" in out
 
 
+class TestArchiverAtomicWrite:
+    def test_no_partial_md_on_write_failure(self, tmp_path):
+        cfg = make_config(tmp_path)
+        topic = make_topic(1, "fail-topic", "2024-03-15T10:00:00.000Z")
+        full = make_full_topic(1, "fail-topic", "2024-03-15T10:00:00.000Z")
+
+        with patch("discourse_retrieval.archiver.DiscourseClient") as MockClient:
+            mock_client = MockClient.return_value
+            mock_client.list_topics.side_effect = [[topic], []]
+            mock_client.get_topic.return_value = full
+
+            with patch("pathlib.Path.rename", side_effect=OSError("disk full")):
+                try:
+                    Archiver(cfg).run()
+                except OSError:
+                    pass
+
+        md_path = tmp_path / "2024" / "03" / "fail-topic.md"
+        assert not md_path.exists()
+        assert not md_path.with_suffix(".md.tmp").exists()
+
+
 class TestArchiverResume:
     def test_skips_up_to_date_thread(self, tmp_path, capsys):
         cfg = make_config(tmp_path)
