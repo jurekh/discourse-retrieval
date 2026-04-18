@@ -1,4 +1,3 @@
-import os
 import textwrap
 from datetime import date
 from pathlib import Path

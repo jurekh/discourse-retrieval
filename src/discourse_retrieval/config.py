@@ -39,8 +39,10 @@ class Config:
 
         try:
             earliest_date = date.fromisoformat(data["earliest_date"])
-        except (ValueError, TypeError):
-            raise ValueError("config field 'earliest_date' must be a date in YYYY-MM-DD format")
+        except (ValueError, TypeError) as exc:
+            raise ValueError(
+                "config field 'earliest_date' must be a date in YYYY-MM-DD format"
+            ) from exc
 
         max_retries = data.get("max_retries", 5)
         if not isinstance(max_retries, int) or max_retries < 1:

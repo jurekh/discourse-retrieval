@@ -42,7 +42,8 @@ class DiscourseClient:
                 attempt += 1
                 if attempt >= self._config.max_retries:
                     raise RuntimeError(
-                        f"API request failed after {self._config.max_retries} retries: 429 Too Many Requests"
+                        f"API request failed after {self._config.max_retries} retries: "
+                        "429 Too Many Requests"
                     )
                 retry_after = response.headers.get("Retry-After")
                 if retry_after:
