@@ -3,21 +3,28 @@
 ## Requirements
 
 - Python 3.11+
+- `uv` (install: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - A Discourse API key with read access to the forum
 
-## Install
-
-```sh
-pip install discourse-retrieval
-```
-
-Or from source:
+## Install & Build
 
 ```sh
 git clone <repo>
 cd discourse-retrieval
-pip install -e .
+make build
 ```
+
+`make build` runs `uv sync`, which creates a virtual environment under `.venv/` and
+installs all runtime and dev dependencies from `uv.lock`.
+
+## Developer Workflow
+
+| Command | What it does |
+|---|---|
+| `make build` | Create/update venv, install all dependencies |
+| `make lint` | Run ruff; exits non-zero on any warning |
+| `make test` | Run tests with coverage; fails below 80% |
+| `make clean` | Remove `.venv`, `dist`, `*.egg-info`, `.coverage` |
 
 ## Configure
 
@@ -45,7 +52,13 @@ export DISCOURSE_API_KEY="your-api-key-here"
 ## Run
 
 ```sh
-discourse-retrieval
+uv run discourse-retrieval
+```
+
+Or, if installed into the venv's PATH:
+
+```sh
+.venv/bin/discourse-retrieval
 ```
 
 Output while running:
@@ -62,15 +75,13 @@ Done. Downloaded: 3, Updated: 0, Skipped: 0
 Press Ctrl-C at any time. Re-run the same command to resume:
 
 ```sh
-discourse-retrieval
+uv run discourse-retrieval
 ```
 
 Already-downloaded threads with no new replies are skipped automatically.
 Threads with new replies since the last run are refreshed.
 
-## Validation
-
-Verify the archive looks correct:
+## Validate the Archive
 
 ```sh
 ls archive/2024/03/
@@ -83,3 +94,20 @@ head archive/2024/03/my-first-topic.md
 # **Created**: 2024-03-15
 # ...
 ```
+
+## Run Tests Manually
+
+```sh
+make test
+```
+
+Expected output includes a coverage summary:
+
+```
+---------- coverage: platform linux ----------
+TOTAL     142    11    92%
+
+===== N passed in 0.Xs =====
+```
+
+Build fails if total coverage drops below 80%.

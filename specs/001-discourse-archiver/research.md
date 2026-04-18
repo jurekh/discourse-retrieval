@@ -49,11 +49,15 @@ fallback for posts without raw content.
 
 ## Testing Framework
 
-**Decision**: `pytest` (latest stable)
+**Decision**: `pytest` (latest stable) + `pytest-cov`
 
 **Rationale**: Standard in the Python ecosystem. Clean test discovery, fixture system, and
-parametrize support. Required by constitution's TDD mandate. Better ergonomics than
-`unittest` for the test-first workflow.
+parametrize support. Required by constitution's TDD mandate. `pytest-cov` adds coverage
+measurement and enforcement. Coverage threshold set to 80% minimum; build fails below it.
+
+**Coverage configuration**: `pytest-cov` with `--cov=discourse_retrieval --cov-fail-under=80`
+configured in `pyproject.toml` under `[tool.pytest.ini_options]`. Coverage report is
+printed to stdout (`--cov-report=term-missing`) so developers see uncovered lines locally.
 
 ## Linting
 
@@ -62,6 +66,34 @@ parametrize support. Required by constitution's TDD mandate. Better ergonomics t
 **Rationale**: Single tool replacing flake8, isort, and pyupgrade. Fast, zero config for
 reasonable defaults, and widely adopted. Satisfies the constitution's strict linting
 requirement with minimal setup.
+
+## Virtual Environment & Build Tooling
+
+**Decision**: `uv` for virtual environment and dependency management; `Makefile` for
+developer workflow automation.
+
+**Rationale**: `uv` is fast (Rust-based), handles venv creation, dependency locking, and
+package installation in one tool. It replaces the `python -m venv` + `pip install` workflow
+with a single command (`uv sync`). It is widely adopted, actively maintained, and aligns
+with the constitution's preference for reliable, popular tooling.
+
+A `Makefile` exposes four standard targets (`build`, `lint`, `test`, `clean`) as the
+single developer interface. This removes the need to remember tool-specific invocations
+and provides a consistent entry point for both humans and CI.
+
+**Alternatives considered**:
+- `pip` + `venv` (stdlib): Works but slower and more verbose; no lockfile by default.
+- `poetry`: Popular but heavier; `uv` covers the same use cases with less overhead.
+- `hatch`: Good but less commonly used outside specific communities.
+
+**Makefile targets**:
+
+| Target | Command | Description |
+|---|---|---|
+| `build` | `uv sync` | Create/update venv and install all dependencies |
+| `lint` | `uv run ruff check . && uv run ruff format --check .` | Run linter; non-zero exit on any warning |
+| `test` | `uv run pytest` | Run tests with coverage; fails below 80% |
+| `clean` | `rm -rf .venv dist *.egg-info .coverage` | Remove generated artifacts |
 
 ## Discourse API Approach
 
