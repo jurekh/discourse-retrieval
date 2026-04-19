@@ -1,0 +1,19 @@
+# Discourse Retrieval - sample configuration
+# Copy to config.toml and fill in your values.
+#
+# Environment variable overrides:
+#   DISCOURSE_API_KEY      - overrides api_key
+#   DISCOURSE_API_USERNAME - overrides api_username
+
+forum_url = "https://discourse.example.com"
+api_key = "your-api-key-here"
+api_username = "system"
+earliest_date = "2024-01-01"
+output_dir = "./archive"
+
+# Optional: restrict download to specific category IDs.
+# Leave empty or omit to download all categories.
+# categories = [4, 7]
+
+# Optional: maximum retries on HTTP 429 (rate limit). Default: 5.
+# max_retries = 5

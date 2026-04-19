@@ -11,14 +11,24 @@ class DiscourseClient:
         self._session = requests.Session()
         self._session.headers.update({"Accept": "application/json"})
 
-    def list_topics(self, page: int) -> list[dict]:
+    def list_topics(self, page: int, order: str = "created") -> list[dict]:
         url = f"{self._config.forum_url}/latest.json"
-        data = self._get(url, params={"order": "created", "ascending": "false", "page": page})
+        params: dict = {"page": page}
+        if order == "created":
+            params["order"] = "created"
+            params["ascending"] = "false"
+        data = self._get(url, params=params)
         return data.get("topic_list", {}).get("topics", [])
 
-    def list_category_topics(self, category_id: int, page: int) -> list[dict]:
+    def list_category_topics(
+        self, category_id: int, page: int, order: str = "created"
+    ) -> list[dict]:
         url = f"{self._config.forum_url}/c/{category_id}/l/latest.json"
-        data = self._get(url, params={"page": page})
+        params: dict = {"page": page}
+        if order == "created":
+            params["order"] = "created"
+            params["ascending"] = "false"
+        data = self._get(url, params=params)
         return data.get("topic_list", {}).get("topics", [])
 
     def get_topic(self, topic_id: int) -> dict:

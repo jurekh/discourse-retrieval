@@ -5,7 +5,7 @@ from pathlib import Path
 from discourse_retrieval.client import DiscourseClient
 from discourse_retrieval.config import Config
 from discourse_retrieval.renderer import ThreadRenderer
-from discourse_retrieval.state import DownloadState
+from discourse_retrieval.state import ArchiveState, DownloadState
 
 
 class Archiver:
@@ -17,13 +17,15 @@ class Archiver:
 
     def run(self) -> None:
         signal.signal(signal.SIGINT, self._handle_interrupt)
+        output_dir = Path(self._config.output_dir)
+        archive_state = ArchiveState.load(output_dir) or ArchiveState()
 
         downloaded = 0
         updated = 0
         skipped = 0
 
         try:
-            for topic in self._iter_topics():
+            for topic in self._iter_topics(archive_state):
                 if self._interrupted:
                     break
 
@@ -47,33 +49,63 @@ class Archiver:
         finally:
             signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+        if not self._interrupted:
+            now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+            archive_state.mark_complete(now)
+            archive_state.save(output_dir)
+
         summary = f"Downloaded: {downloaded}, Updated: {updated}, Skipped: {skipped}"
         if self._interrupted:
             print(f"Interrupted. {summary} (resumable)")
         else:
             print(f"Done. {summary}")
 
-    def _iter_topics(self):
+    def _iter_topics(self, archive_state: ArchiveState):
+        order = "activity" if archive_state.backfill_complete else "created"
         categories = self._config.categories
         if categories:
             for cat_id in categories:
-                yield from self._paginate(self._make_category_fetcher(cat_id))
+                yield from self._paginate(
+                    self._make_category_fetcher(cat_id, order), archive_state
+                )
         else:
-            yield from self._paginate(self._client.list_topics)
+            yield from self._paginate(self._make_topic_fetcher(order), archive_state)
 
-    def _paginate(self, fetch_page):
+    def _paginate(self, fetch_page, archive_state: ArchiveState):
+        cursor = archive_state.oldest_topic_date
+        last_run = archive_state.last_run
+        is_incremental = archive_state.backfill_complete
+        output_dir = Path(self._config.output_dir)
         page = 0
         while True:
             topics = fetch_page(page)
             if not topics:
                 break
+            stop_pagination = False
             all_old = True
+            page_oldest: str | None = None
             for topic in topics:
                 created = _parse_dt(topic["created_at"]).date()
-                if created >= self._config.earliest_date:
-                    all_old = False
-                    yield topic
-            if all_old:
+                if is_incremental:
+                    bumped = topic.get("bumped_at") or topic["created_at"]
+                    if bumped < last_run:
+                        stop_pagination = True
+                        break
+                    if created >= self._config.earliest_date:
+                        all_old = False
+                        yield topic
+                else:
+                    if created >= self._config.earliest_date:
+                        all_old = False
+                        if cursor and topic["created_at"] > cursor:
+                            continue  # fast-skip: already processed in prior run
+                        yield topic
+                        if page_oldest is None or topic["created_at"] < page_oldest:
+                            page_oldest = topic["created_at"]
+            if not is_incremental and page_oldest is not None:
+                archive_state.update_cursor(page_oldest)
+                archive_state.save(output_dir)
+            if stop_pagination or all_old:
                 break
             page += 1
 
@@ -103,7 +135,6 @@ class Archiver:
 
         md_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # atomic write: write to temp file then rename
         tmp = md_path.with_suffix(".md.tmp")
         try:
             tmp.write_text(content, encoding="utf-8")
@@ -121,9 +152,15 @@ class Archiver:
         )
         state.save(md_path)
 
-    def _make_category_fetcher(self, cat_id: int):
+    def _make_topic_fetcher(self, order: str = "created"):
         def fetch(page: int) -> list[dict]:
-            return self._client.list_category_topics(cat_id, page)
+            return self._client.list_topics(page, order=order)
+
+        return fetch
+
+    def _make_category_fetcher(self, cat_id: int, order: str = "created"):
+        def fetch(page: int) -> list[dict]:
+            return self._client.list_category_topics(cat_id, page, order=order)
 
         return fetch
 

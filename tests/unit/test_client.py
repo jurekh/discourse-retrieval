@@ -81,6 +81,48 @@ class TestListTopics:
         assert result == [t]
 
 
+class TestListTopicsOrdering:
+    def test_default_order_sends_created_params(self):
+        cfg = make_config()
+        client = DiscourseClient(cfg)
+        resp = make_response(json_data=_EMPTY_TOPICS)
+        with patch.object(client._session, "get", return_value=resp) as mock_get:
+            client.list_topics(page=0)
+        params = mock_get.call_args[1]["params"]
+        assert params.get("order") == "created"
+        assert params.get("ascending") == "false"
+
+    def test_activity_order_omits_order_params(self):
+        cfg = make_config()
+        client = DiscourseClient(cfg)
+        resp = make_response(json_data=_EMPTY_TOPICS)
+        with patch.object(client._session, "get", return_value=resp) as mock_get:
+            client.list_topics(page=0, order="activity")
+        params = mock_get.call_args[1]["params"]
+        assert "order" not in params
+        assert "ascending" not in params
+
+    def test_category_default_order_sends_created_params(self):
+        cfg = make_config()
+        client = DiscourseClient(cfg)
+        resp = make_response(json_data=_EMPTY_TOPICS)
+        with patch.object(client._session, "get", return_value=resp) as mock_get:
+            client.list_category_topics(category_id=4, page=0)
+        params = mock_get.call_args[1]["params"]
+        assert params.get("order") == "created"
+        assert params.get("ascending") == "false"
+
+    def test_category_activity_order_omits_order_params(self):
+        cfg = make_config()
+        client = DiscourseClient(cfg)
+        resp = make_response(json_data=_EMPTY_TOPICS)
+        with patch.object(client._session, "get", return_value=resp) as mock_get:
+            client.list_category_topics(category_id=4, page=0, order="activity")
+        params = mock_get.call_args[1]["params"]
+        assert "order" not in params
+        assert "ascending" not in params
+
+
 class TestListCategoryTopics:
     def test_calls_category_endpoint(self):
         cfg = make_config()

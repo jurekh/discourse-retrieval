@@ -34,3 +34,39 @@ class DownloadState:
 
 def _sidecar_path(md_path: Path) -> Path:
     return md_path.with_suffix(".state.json")
+
+
+_ARCHIVE_STATE_FILE = "archive.state.json"
+
+
+@dataclass
+class ArchiveState:
+    backfill_complete: bool = False
+    last_run: str | None = None
+    oldest_topic_date: str | None = None
+
+    def save(self, output_dir: Path) -> None:
+        path = output_dir / _ARCHIVE_STATE_FILE
+        tmp = path.with_suffix(".json.tmp")
+        try:
+            tmp.write_text(json.dumps(asdict(self), indent=2))
+            tmp.rename(path)
+        except Exception:
+            tmp.unlink(missing_ok=True)
+            raise
+
+    @classmethod
+    def load(cls, output_dir: Path) -> "ArchiveState | None":
+        path = output_dir / _ARCHIVE_STATE_FILE
+        if not path.exists():
+            return None
+        data = json.loads(path.read_text())
+        return cls(**data)
+
+    def update_cursor(self, topic_date: str) -> None:
+        if self.oldest_topic_date is None or topic_date < self.oldest_topic_date:
+            self.oldest_topic_date = topic_date
+
+    def mark_complete(self, now: str) -> None:
+        self.backfill_complete = True
+        self.last_run = now

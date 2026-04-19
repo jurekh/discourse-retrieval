@@ -1,6 +1,6 @@
 import json
 
-from discourse_retrieval.state import DownloadState
+from discourse_retrieval.state import ArchiveState, DownloadState
 
 _DT = "2026-04-18T10:00:00Z"
 _DT2 = "2026-01-01T00:00:00Z"
@@ -63,6 +63,71 @@ class TestNeedsUpdate:
     def test_lower_count_returns_false(self):
         # guard: posts_count shouldn't decrease, but ignore if it does
         assert _state(10).needs_update(9) is False
+
+
+class TestArchiveStateSave:
+    def test_save_writes_archive_state_json(self, tmp_path):
+        ArchiveState(backfill_complete=False, last_run=None, oldest_topic_date=None).save(tmp_path)
+        assert (tmp_path / "archive.state.json").exists()
+
+    def test_save_overwrites_existing(self, tmp_path):
+        ArchiveState(
+            backfill_complete=False, last_run=None, oldest_topic_date="2024-01-01T00:00:00Z"
+        ).save(tmp_path)
+        ArchiveState(
+            backfill_complete=True, last_run=_DT, oldest_topic_date="2024-01-01T00:00:00Z"
+        ).save(tmp_path)
+        data = json.loads((tmp_path / "archive.state.json").read_text())
+        assert data["backfill_complete"] is True
+        assert data["last_run"] == _DT
+
+
+class TestArchiveStateLoad:
+    def test_load_reads_file(self, tmp_path):
+        (tmp_path / "archive.state.json").write_text(
+            json.dumps({"backfill_complete": True, "last_run": _DT, "oldest_topic_date": _DT2})
+        )
+        state = ArchiveState.load(tmp_path)
+        assert state is not None
+        assert state.backfill_complete is True
+        assert state.last_run == _DT
+        assert state.oldest_topic_date == _DT2
+
+    def test_load_returns_none_when_absent(self, tmp_path):
+        assert ArchiveState.load(tmp_path) is None
+
+
+class TestArchiveStateUpdateCursor:
+    def test_update_cursor_sets_date_when_none(self):
+        s = ArchiveState()
+        s.update_cursor("2024-03-01T00:00:00Z")
+        assert s.oldest_topic_date == "2024-03-01T00:00:00Z"
+
+    def test_update_cursor_keeps_minimum(self):
+        s = ArchiveState(oldest_topic_date="2024-03-01T00:00:00Z")
+        s.update_cursor("2024-06-01T00:00:00Z")  # newer - should not replace
+        assert s.oldest_topic_date == "2024-03-01T00:00:00Z"
+        s.update_cursor("2024-01-01T00:00:00Z")  # older - should replace
+        assert s.oldest_topic_date == "2024-01-01T00:00:00Z"
+
+    def test_update_cursor_does_not_change_backfill_or_last_run(self):
+        s = ArchiveState(backfill_complete=False, last_run=_DT)
+        s.update_cursor("2024-03-01T00:00:00Z")
+        assert s.backfill_complete is False
+        assert s.last_run == _DT
+
+
+class TestArchiveStateMarkComplete:
+    def test_mark_complete_sets_fields(self):
+        s = ArchiveState()
+        s.mark_complete(_DT)
+        assert s.backfill_complete is True
+        assert s.last_run == _DT
+
+    def test_mark_complete_does_not_clear_cursor(self):
+        s = ArchiveState(oldest_topic_date=_DT2)
+        s.mark_complete(_DT)
+        assert s.oldest_topic_date == _DT2
 
 
 class TestNeedsDownload:
