@@ -1,15 +1,27 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
-.venv/
-venv/
-dist/
 *.egg-info/
-.coverage
+dist/
+
+# Tools
+.venv/
+.ruff_cache/
 .pytest_cache/
+.coverage
+
+# Local tooling
+.claude/
+.entire/
+.specify/
+
+# Temp files
 *.tmp
+*.swp
 .DS_Store
 Thumbs.db
-*.swp
+
+# Local config and data
 config.toml
 discourse-archive/
