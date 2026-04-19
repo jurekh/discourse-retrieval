@@ -139,3 +139,29 @@ re-downloaded and the state file updated.
 **Why sidecar over single index**: Self-contained with content, survives partial cleanup
 (delete a thread + its state to force re-download), and avoids a single file that grows
 with archive size.
+
+## Global Archive State
+
+**Decision**: Single `archive.state.json` in `<output_dir>` tracking `backfill_complete`
+and `last_run`.
+
+**Rationale**: The per-thread sidecar approach is correct for detecting new replies but
+does not eliminate unnecessary API pagination. Without global state, every resume
+re-paginates from page 0 through all historical pages to check each thread - O(all pages)
+even when nothing has changed. A global state file enables two modes:
+
+- **Backfill mode** (`backfill_complete=false` or absent): paginate all pages to
+  `earliest_date`. Used on first run and after any interrupted run.
+- **Incremental mode** (`backfill_complete=true`): paginate only until `bumped_at <
+  last_run`. Used after every clean completion. Reduces page queries to O(recent activity).
+
+**Write rule**: Written only on clean (uninterrupted) completion. An interrupt leaves the
+file unchanged, guaranteeing the next run re-enters backfill mode for safety.
+
+**Inspired by**: mattermost-retrieval's per-channel `backfill_complete` + `last_run`
+pattern, adapted to the single-stream (no per-channel split) Discourse topology.
+
+**Alternatives considered**:
+- No global state (current): simple, but O(all pages) on every resume.
+- Per-category state file: more granular but adds complexity without material benefit
+  for typical single-category or all-category archives.

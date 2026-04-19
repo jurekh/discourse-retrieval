@@ -76,14 +76,37 @@ Used to detect new replies and support resume-on-rerun.
 
 ---
 
+### ArchiveState
+
+Persisted as `archive.state.json` in the root of `<output_dir>`.
+One file for the entire archive; records whether the full backfill is complete
+and when the last successful run occurred.
+
+| Field | Type | Description |
+|---|---|---|
+| `backfill_complete` | boolean | `true` once pagination has reached `earliest_date` without interruption. |
+| `last_run` | string (ISO 8601 UTC) | Timestamp of the last clean (uninterrupted) run completion. |
+
+**State lifecycle**:
+1. No `archive.state.json`: backfill mode - paginate all pages back to `earliest_date`.
+2. `backfill_complete = false`: backfill mode - same as above (interrupted prior run).
+3. `backfill_complete = true`: incremental mode - paginate only topics with activity
+   since `last_run`; stop when topic `bumped_at < last_run`.
+
+**Write rule**: Only written on clean completion. An interrupted run MUST NOT update
+this file, so the next run re-enters the correct mode.
+
+---
+
 ## Output File Structure
 
 ```text
 <output_dir>/
+  archive.state.json      # Global archive state (backfill_complete, last_run)
   YYYY/
     MM/
       <slug>.md           # Thread content
-      <slug>.state.json   # Download state sidecar
+      <slug>.state.json   # Per-thread download state sidecar
 ```
 
 ## Markdown File Format
