@@ -30,16 +30,19 @@ class Archiver:
                 md_path = self._output_path(topic)
                 should_dl, is_update = self._should_download(topic, md_path)
 
+                prefix = f"[{md_path.parent.parent.name}/{md_path.parent.name}]"
                 if not should_dl:
                     skipped += 1
+                    print(f"{prefix} {md_path.name} (skip)")
                     continue
 
                 self._download_thread(topic, md_path)
                 if is_update:
                     updated += 1
+                    print(f"{prefix} {md_path.name} (update)")
                 else:
                     downloaded += 1
-                print(f"[{md_path.parent.parent.name}/{md_path.parent.name}] {md_path.name}")
+                    print(f"{prefix} {md_path.name}")
 
         finally:
             signal.signal(signal.SIGINT, signal.SIG_DFL)

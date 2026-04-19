@@ -156,6 +156,7 @@ class TestArchiverResume:
             Archiver(cfg).run()
 
         out = capsys.readouterr().out
+        assert "my-topic.md (skip)" in out
         assert "Skipped: 1" in out
         mock_client.get_topic.assert_not_called()
 
@@ -181,5 +182,6 @@ class TestArchiverResume:
             Archiver(cfg).run()
 
         out = capsys.readouterr().out
+        assert "my-topic.md (update)" in out
         assert "Updated: 1" in out
         mock_client.get_topic.assert_called_once()
