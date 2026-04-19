@@ -170,29 +170,29 @@ updated but `backfill_complete` unchanged. Re-run, verify cursor topics fast-ski
 
 ### Tests for ArchiveState (write first, confirm failing)
 
-- [ ] T027 [P] [US2] Write failing unit tests for `ArchiveState` in `tests/unit/test_state.py` (extend existing file): test `save(output_dir)` writes `archive.state.json` in `output_dir`; test `load(output_dir)` reads it back; test `load()` returns `None` when absent; test `update_cursor(date_str)` sets `oldest_topic_date` and keeps the minimum across calls without changing `backfill_complete` or `last_run`; test `mark_complete(now)` sets `backfill_complete=True` and `last_run`
+- [X] T027 [P] [US2] Write failing unit tests for `ArchiveState` in `tests/unit/test_state.py` (extend existing file): test `save(output_dir)` writes `archive.state.json` in `output_dir`; test `load(output_dir)` reads it back; test `load()` returns `None` when absent; test `update_cursor(date_str)` sets `oldest_topic_date` and keeps the minimum across calls without changing `backfill_complete` or `last_run`; test `mark_complete(now)` sets `backfill_complete=True` and `last_run`
 
 ### Implementation: ArchiveState
 
-- [ ] T028 [US2] Add `ArchiveState` dataclass to `src/discourse_retrieval/state.py`: fields `backfill_complete: bool = False`, `last_run: str | None = None`, `oldest_topic_date: str | None = None`; `save(output_dir: Path)` atomic write (tmp + rename) to `output_dir/archive.state.json`; `load(output_dir: Path) -> ArchiveState | None`; `update_cursor(topic_date: str)` sets field to minimum of current and given ISO8601 date string; `mark_complete(now: str)` sets `backfill_complete=True` and `last_run=now`
+- [X] T028 [US2] Add `ArchiveState` dataclass to `src/discourse_retrieval/state.py`: fields `backfill_complete: bool = False`, `last_run: str | None = None`, `oldest_topic_date: str | None = None`; `save(output_dir: Path)` atomic write (tmp + rename) to `output_dir/archive.state.json`; `load(output_dir: Path) -> ArchiveState | None`; `update_cursor(topic_date: str)` sets field to minimum of current and given ISO8601 date string; `mark_complete(now: str)` sets `backfill_complete=True` and `last_run=now`
 
 ### Tests for activity-ordered listing (write first, confirm failing)
 
-- [ ] T029 [P] [US2] Write failing unit tests for activity-sorted listing in `tests/unit/test_client.py` (extend existing file): test `list_topics(page=0, order='activity')` calls `GET /latest.json` without `order` or `ascending` params; test `list_topics(page=0)` (default) still sends `order=created&ascending=false` (no regression); same for `list_category_topics` variants
+- [X] T029 [P] [US2] Write failing unit tests for activity-sorted listing in `tests/unit/test_client.py` (extend existing file): test `list_topics(page=0, order='activity')` calls `GET /latest.json` without `order` or `ascending` params; test `list_topics(page=0)` (default) still sends `order=created&ascending=false` (no regression); same for `list_category_topics` variants
 
 ### Implementation: client order parameter
 
-- [ ] T030 [P] [US2] Add `order` parameter to `DiscourseClient.list_topics()` and `list_category_topics()` in `src/discourse_retrieval/client.py`: `order: str = 'created'`; when `order='created'` include `order=created&ascending=false` params (existing behaviour); when `order='activity'` omit those params (Discourse default ordering by `bumped_at`)
+- [X] T030 [P] [US2] Add `order` parameter to `DiscourseClient.list_topics()` and `list_category_topics()` in `src/discourse_retrieval/client.py`: `order: str = 'created'`; when `order='created'` include `order=created&ascending=false` params (existing behaviour); when `order='activity'` omit those params (Discourse default ordering by `bumped_at`)
 
 ### Tests for two-mode archiver (write first, confirm failing)
 
-- [ ] T031 [US2] Write failing integration tests for archive state and modes in `tests/integration/test_archiver.py` (extend existing file): test clean run writes `archive.state.json` with `backfill_complete=True` and `last_run` set; test run interrupted before any download (`_interrupted=True`) does NOT set `backfill_complete=True`; test that after one page of topics is processed an interrupted run has `oldest_topic_date` set; test resume from cursor skips topics newer than `oldest_topic_date` without calling `get_topic_posts_count`; test incremental mode (`backfill_complete=True` preset) stops pagination when `bumped_at < last_run` and does not call `get_topic` for topics outside the window
+- [X] T031 [US2] Write failing integration tests for archive state and modes in `tests/integration/test_archiver.py` (extend existing file): test clean run writes `archive.state.json` with `backfill_complete=True` and `last_run` set; test run interrupted before any download (`_interrupted=True`) does NOT set `backfill_complete=True`; test that after one page of topics is processed an interrupted run has `oldest_topic_date` set; test resume from cursor skips topics newer than `oldest_topic_date` without calling `get_topic_posts_count`; test incremental mode (`backfill_complete=True` preset) stops pagination when `bumped_at < last_run` and does not call `get_topic` for topics outside the window
 
 ### Implementation: two-mode Archiver
 
-- [ ] T032 [US2] Modify `Archiver.run()` in `src/discourse_retrieval/archiver.py`: load `ArchiveState.load(config.output_dir)` at startup; pass archive state to `_iter_topics()`; after each page in backfill mode call `archive_state.update_cursor(oldest_created_at_on_page)` and save atomically; on clean completion (no interrupt) call `archive_state.mark_complete(now)` and save
+- [X] T032 [US2] Modify `Archiver.run()` in `src/discourse_retrieval/archiver.py`: load `ArchiveState.load(config.output_dir)` at startup; pass archive state to `_iter_topics()`; after each page in backfill mode call `archive_state.update_cursor(oldest_created_at_on_page)` and save atomically; on clean completion (no interrupt) call `archive_state.mark_complete(now)` and save
 
-- [ ] T033 [US2] Modify `Archiver._iter_topics()` and `_paginate()` in `src/discourse_retrieval/archiver.py`: in backfill mode fast-skip (no yield, no sidecar check) topics with `created_at > oldest_topic_date`; in incremental mode pass `order='activity'` to listing calls and stop pagination when any topic's `bumped_at < last_run`
+- [X] T033 [US2] Modify `Archiver._iter_topics()` and `_paginate()` in `src/discourse_retrieval/archiver.py`: in backfill mode fast-skip (no yield, no sidecar check) topics with `created_at > oldest_topic_date`; in incremental mode pass `order='activity'` to listing calls and stop pagination when any topic's `bumped_at < last_run`
 
 **Checkpoint**: `make test` passes. Interrupt a run, re-run; confirm topics newer than cursor produce no `get_topic_posts_count` calls. On a completed run, confirm second run uses activity ordering and stops early.
 
