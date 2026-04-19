@@ -37,15 +37,18 @@ class Archiver:
                 if not should_dl:
                     skipped += 1
                     print(f"{prefix} {md_path.name} (skip)")
-                    continue
-
-                self._download_thread(topic, md_path)
-                if is_update:
-                    updated += 1
-                    print(f"{prefix} {md_path.name} (update)")
                 else:
-                    downloaded += 1
-                    print(f"{prefix} {md_path.name}")
+                    self._download_thread(topic, md_path)
+                    if is_update:
+                        updated += 1
+                        print(f"{prefix} {md_path.name} (update)")
+                    else:
+                        downloaded += 1
+                        print(f"{prefix} {md_path.name}")
+
+                if not archive_state.backfill_complete:
+                    archive_state.update_cursor(topic["created_at"])
+                    archive_state.save(output_dir)
 
         finally:
             signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -76,7 +79,6 @@ class Archiver:
         cursor = archive_state.oldest_topic_date
         last_run = archive_state.last_run
         is_incremental = archive_state.backfill_complete
-        output_dir = Path(self._config.output_dir)
         page = 0
         while True:
             topics = fetch_page(page)
@@ -84,7 +86,6 @@ class Archiver:
                 break
             stop_pagination = False
             all_old = True
-            page_oldest: str | None = None
             for topic in topics:
                 created = _parse_dt(topic["created_at"]).date()
                 if is_incremental:
@@ -101,11 +102,6 @@ class Archiver:
                         if cursor and topic["created_at"] > cursor:
                             continue  # fast-skip: already processed in prior run
                         yield topic
-                        if page_oldest is None or topic["created_at"] < page_oldest:
-                            page_oldest = topic["created_at"]
-            if not is_incremental and page_oldest is not None:
-                archive_state.update_cursor(page_oldest)
-                archive_state.save(output_dir)
             if stop_pagination or all_old:
                 break
             page += 1
