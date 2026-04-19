@@ -7,7 +7,7 @@ from discourse_retrieval.cli import main
 
 
 def _run(args: list[str]):
-    with patch("sys.argv", ["discourse-retrieval", *args]):
+    with patch("sys.argv", ["discourse-archive", *args]):
         main()
 
 

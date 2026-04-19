@@ -8,7 +8,7 @@ dependencies = [
 ]
 
 [project.scripts]
-discourse-retrieval = "discourse_retrieval.cli:main"
+discourse-archive = "discourse_retrieval.cli:main"
 
 [build-system]
 requires = ["hatchling"]

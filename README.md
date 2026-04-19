@@ -60,13 +60,13 @@ Environment variables take precedence over values in the config file.
 ## Running
 
 ```bash
-uv run discourse-retrieval
+uv run discourse-archive
 ```
 
 This reads `./config.toml` by default. To specify a different config file:
 
 ```bash
-uv run discourse-retrieval /path/to/config.toml
+uv run discourse-archive /path/to/config.toml
 ```
 
 ### First run

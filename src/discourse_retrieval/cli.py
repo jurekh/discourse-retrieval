@@ -10,7 +10,7 @@ _VERSION = "0.1.0"
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        prog="discourse-retrieval",
+        prog="discourse-archive",
         description="Archive Discourse forum threads to local Markdown files.",
     )
     parser.add_argument(
