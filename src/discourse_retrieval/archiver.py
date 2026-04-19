@@ -19,6 +19,7 @@ class Archiver:
         signal.signal(signal.SIGINT, self._handle_interrupt)
         output_dir = Path(self._config.output_dir)
         archive_state = ArchiveState.load(output_dir) or ArchiveState()
+        archive_state.save(output_dir)
 
         downloaded = 0
         updated = 0
