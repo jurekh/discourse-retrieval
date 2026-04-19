@@ -84,17 +84,21 @@ and when the last successful run occurred.
 
 | Field | Type | Description |
 |---|---|---|
-| `backfill_complete` | boolean | `true` once pagination has reached `earliest_date` without interruption. |
-| `last_run` | string (ISO 8601 UTC) | Timestamp of the last clean (uninterrupted) run completion. |
+| `backfill_complete` | boolean | `true` once pagination has reached `earliest_date` on a clean run. |
+| `last_run` | string (ISO 8601 UTC) | Timestamp of the last clean (uninterrupted) run. `null` until first clean run. |
+| `oldest_topic_date` | string (ISO 8601 UTC) | Cursor: `created_at` of the oldest topic processed so far. Updated after each page during backfill. |
 
 **State lifecycle**:
-1. No `archive.state.json`: backfill mode - paginate all pages back to `earliest_date`.
-2. `backfill_complete = false`: backfill mode - same as above (interrupted prior run).
+1. No `archive.state.json`: backfill mode - paginate from page 0 to `earliest_date`.
+2. `backfill_complete = false`, `oldest_topic_date` present: interrupted backfill -
+   paginate from page 0, fast-skip topics newer than `oldest_topic_date`, resume
+   downloading from the cursor forward.
 3. `backfill_complete = true`: incremental mode - paginate only topics with activity
    since `last_run`; stop when topic `bumped_at < last_run`.
 
-**Write rule**: Only written on clean completion. An interrupted run MUST NOT update
-this file, so the next run re-enters the correct mode.
+**Write rule**: `oldest_topic_date` is updated after each page during backfill
+(survives interrupts). `backfill_complete` and `last_run` are only written on clean
+completion.
 
 ---
 

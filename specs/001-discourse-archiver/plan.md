@@ -86,11 +86,13 @@ tests/
 Condition: `archive.state.json` absent, or `backfill_complete = false`.
 
 1. Paginate `/latest.json` (or `/c/{id}/l/latest.json` per category) from page 0.
-2. For each topic: check DownloadState sidecar; download or skip.
-3. Stop pagination when all topics on a page predate `earliest_date`.
-4. On clean completion (no Ctrl-C): write `archive.state.json` with
-   `backfill_complete = true` and `last_run = <now>`.
-5. On interrupt: do NOT write `archive.state.json`; next run stays in backfill mode.
+2. For each topic with `created_at > oldest_topic_date` (if cursor present): fast-skip
+   (no API call). These were already processed in a prior interrupted run.
+3. For each topic at or past the cursor: check DownloadState sidecar; download or skip.
+4. After each page is processed: update `oldest_topic_date` in `archive.state.json`
+   atomically. This write survives interrupts and serves as the resume cursor.
+5. Stop pagination when all topics on a page predate `earliest_date`.
+6. On clean completion: write `backfill_complete = true` and `last_run = <now>`.
 
 ### Incremental Mode
 
@@ -99,11 +101,13 @@ Condition: `backfill_complete = true` in `archive.state.json`.
 1. Paginate `/latest.json` sorted by last activity (Discourse default ordering).
 2. For each topic: if `bumped_at < last_run`, stop pagination immediately.
 3. For each topic in the activity window: apply the same DownloadState sidecar check.
-4. On clean completion: update `archive.state.json` with new `last_run = <now>`.
+4. On clean completion: update `last_run = <now>` in `archive.state.json`.
 
-**Key invariant**: `archive.state.json` is only written on a clean (uninterrupted) run.
-An interrupt leaves the global state unchanged, so the next run re-enters backfill or
-incremental mode based on the last successful state.
+**Key invariants**:
+- `oldest_topic_date` is written after every page - survives Ctrl-C, enables O(remaining)
+  resume instead of O(all) re-pagination.
+- `backfill_complete` and `last_run` are written only on clean completion, so incremental
+  mode is never entered until a full backfill has succeeded.
 
 ## Implementation Status
 

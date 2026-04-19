@@ -155,8 +155,10 @@ even when nothing has changed. A global state file enables two modes:
 - **Incremental mode** (`backfill_complete=true`): paginate only until `bumped_at <
   last_run`. Used after every clean completion. Reduces page queries to O(recent activity).
 
-**Write rule**: Written only on clean (uninterrupted) completion. An interrupt leaves the
-file unchanged, guaranteeing the next run re-enters backfill mode for safety.
+**Write rule**: `oldest_topic_date` is updated after each page during backfill, so an
+interrupt preserves the pagination cursor. `backfill_complete` and `last_run` are
+written only on clean completion, so incremental mode is never entered until the full
+backfill has succeeded.
 
 **Inspired by**: mattermost-retrieval's per-channel `backfill_complete` + `last_run`
 pattern, adapted to the single-stream (no per-channel split) Discourse topology.

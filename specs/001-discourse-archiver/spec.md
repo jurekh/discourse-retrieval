@@ -136,16 +136,18 @@ verifying that only threads from that category appear in the output.
   required.
 - **FR-011**: The output directory MUST be created automatically if it does not exist.
 - **FR-014**: The tool MUST maintain a global archive state file in the output directory
-  (e.g., `archive.state.json`) recording: whether the full backfill to `earliest_date` has
-  completed (`backfill_complete`), and the timestamp of the last successful run (`last_run`).
-  This file MUST be written atomically and MUST be updated only when a run completes without
-  interruption.
-- **FR-015**: When `backfill_complete` is `true` in the global state, the tool MUST operate
-  in incremental mode: it MUST only examine topics that have had forum activity since
-  `last_run`, and MUST stop pagination as soon as it encounters topics with no activity in
-  that window. It MUST NOT re-paginate through all historical pages. When `backfill_complete`
-  is `false` or absent, the tool operates in backfill mode: paginating all pages back to
-  `earliest_date` as today.
+  (`archive.state.json`) recording: `backfill_complete` (whether full backfill to
+  `earliest_date` has finished), `last_run` (timestamp of last clean completion), and
+  `oldest_topic_date` (cursor: `created_at` of the oldest topic processed so far).
+  `oldest_topic_date` MUST be updated atomically after each page during backfill, so it
+  survives interrupts. `backfill_complete` and `last_run` MUST only be written on clean
+  (uninterrupted) completion.
+- **FR-015**: When `backfill_complete` is `true`, the tool MUST operate in incremental
+  mode: paginate only topics with forum activity since `last_run`, stopping as soon as a
+  topic's last-activity timestamp predates `last_run`. When `backfill_complete` is `false`
+  or absent, the tool operates in backfill mode. If `oldest_topic_date` is present, topics
+  newer than that cursor MUST be fast-skipped (no API call) so that resumed backfills do
+  not re-check already-processed pages.
 
 ### Key Entities
 
@@ -187,6 +189,7 @@ verifying that only threads from that category appear in the output.
 ### Session 2026-04-19
 
 - Q: After a completed backfill, should re-runs avoid re-paging through all historical topics? -> A: Yes. A global state file tracks backfill completion and last-run timestamp. Once backfill is complete, subsequent runs operate in incremental mode: only topics with forum activity since the last run are examined. Historical pages are not re-paginated.
+- Q: How does graceful resumption work when backfill is interrupted before completion? -> A: archive.state.json includes an oldest_topic_date cursor updated after each page. On resume, topics newer than the cursor are fast-skipped without API calls; pagination resumes from the cursor forward. Only backfill_complete and last_run require a clean completion to write.
 
 ### Session 2026-04-18
 
