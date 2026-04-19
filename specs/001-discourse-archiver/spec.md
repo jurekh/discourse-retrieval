@@ -63,6 +63,10 @@ new replies are refreshed, and remaining threads are downloaded.
    exits cleanly without corrupting any partially-written file (partial files are either
    absent or valid).
 
+4. **Given** a completed prior run (backfill finished), **When** the tool is run again,
+   **Then** it queries only topics with forum activity since the last run and does NOT
+   re-paginate through historical pages that predate that activity window.
+
 ---
 
 ### User Story 3 - Category/Filter Selection (Priority: P3)
@@ -131,6 +135,17 @@ verifying that only threads from that category appear in the output.
   `my-topic-title.md`). The slug is already URL-safe; no additional sanitization is
   required.
 - **FR-011**: The output directory MUST be created automatically if it does not exist.
+- **FR-014**: The tool MUST maintain a global archive state file in the output directory
+  (e.g., `archive.state.json`) recording: whether the full backfill to `earliest_date` has
+  completed (`backfill_complete`), and the timestamp of the last successful run (`last_run`).
+  This file MUST be written atomically and MUST be updated only when a run completes without
+  interruption.
+- **FR-015**: When `backfill_complete` is `true` in the global state, the tool MUST operate
+  in incremental mode: it MUST only examine topics that have had forum activity since
+  `last_run`, and MUST stop pagination as soon as it encounters topics with no activity in
+  that window. It MUST NOT re-paginate through all historical pages. When `backfill_complete`
+  is `false` or absent, the tool operates in backfill mode: paginating all pages back to
+  `earliest_date` as today.
 
 ### Key Entities
 
@@ -143,6 +158,10 @@ verifying that only threads from that category appear in the output.
 - **DownloadState**: A per-thread metadata record stored locally alongside the output file.
   Contains thread ID, post count at last download, and download timestamp. Used to detect
   when a thread has received new replies and needs to be refreshed.
+- **ArchiveState**: A single global state record stored in the output directory. Tracks
+  whether the full backfill to `earliest_date` has completed, and the timestamp of the last
+  successful run. Used to switch between backfill mode (paginate all historical pages) and
+  incremental mode (only examine topics with forum activity since the last run).
 
 ## Success Criteria *(mandatory)*
 
@@ -151,7 +170,9 @@ verifying that only threads from that category appear in the output.
 - **SC-001**: A user can archive an entire Discourse forum category with a single command
   invocation and no manual intervention.
 - **SC-002**: After an interrupted run, re-running the tool downloads only the threads not
-  yet present on disk — no duplicate network requests for already-archived threads.
+  yet present on disk — no duplicate network requests for already-archived threads. After a
+  completed run, subsequent runs query only topics with recent forum activity, without
+  re-paginating through all historical pages.
 - **SC-003**: Every downloaded markdown file is human-readable and contains all posts in
   the thread with author names and dates visible.
 - **SC-004**: The tool exits within 5 seconds of receiving Ctrl-C, leaving no corrupted
@@ -162,6 +183,10 @@ verifying that only threads from that category appear in the output.
   re-downloading files that already exist.
 
 ## Clarifications
+
+### Session 2026-04-19
+
+- Q: After a completed backfill, should re-runs avoid re-paging through all historical topics? -> A: Yes. A global state file tracks backfill completion and last-run timestamp. Once backfill is complete, subsequent runs operate in incremental mode: only topics with forum activity since the last run are examined. Historical pages are not re-paginated.
 
 ### Session 2026-04-18
 
